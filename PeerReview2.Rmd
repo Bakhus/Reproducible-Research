@@ -1,0 +1,108 @@
+---
+title: "Analysis of weather events across United States"
+output: html_document
+---
+
+#Synopsis
+In this analysis we investigated the weather events across the United States. The main objective was to identify weather events that have greatest impact on public health and economy. The analysed data was from the U.S. National Oceanic and Atmospheric Administration's (NOAA) storm database. The data covers a period of time from 1950 to 2011.
+
+#Data Processing
+First we loaded the zipped file and check the variables.
+```{r echo=FALSE}
+setwd("C:\\Users\\Bahus\\Desktop\\Coursera\\Reproducible-Research\\RepData_PeerAssessment2")
+```
+```{r}
+
+library(plyr)
+data<-read.csv(bzfile("repdata-data-StormData.csv.bz2"))
+names(data)
+
+```
+
+To answer our questions we create two smaller data sets. One for analysis of impact of weather events on public health and the other for impact on economy.
+
+```{r}
+hrph<-data[(data$FATALITIES>0 & data$INJURIES>0),]
+econ_dmg<-data[(data$PROPDMG>0 | data$CROPDMG>0),]
+```
+
+
+For each weather event we calculate average and total number of  Fatalities and Injuries.
+And check the first five rows. Results are ordered in descending order by mean and total number of fatalities and injuries.
+
+```{r}
+ph<-ddply(hrph, .(EVTYPE), summarize, mean_fatalities = round(mean(FATALITIES), 0), total_fatalities=sum(FATALITIES), mean_injuries=round(mean(INJURIES),0),total_injuries=sum(INJURIES))
+head(ph)
+
+mf<-ph[order(-ph$mean_fatalities),]
+tf<-ph[order(-ph$total_fatalities),]
+
+mi<-ph[order(-ph$mean_injuries),]
+ti<-ph[order(-ph$total_injuries),]
+```
+
+Similarly, for each kind of weather event we calculate the average and total damage to properties in US$.
+Results are ordered in descending order by mean and total damage. Selecting only events that made damage in millions (M).
+
+```{r}
+ed<-ddply(econ_dmg, .(EVTYPE,PROPDMGEXP), summarize, mean_dmg = round(mean(PROPDMG), 0), total_dmg=sum(PROPDMG))
+ed<-ed[ed$PROPDMGEXP=="M",]
+head(ed)
+
+md<-ed[order(-ed$mean_dmg),]
+td<-ed[order(-ed$total_dmg),]
+```
+
+#Results
+
+## Impact on public health
+In terms of number of fatalities the most severe events are Tornados and Tsunamies.
+Tornados have smaller average number of fatalities compared to Tsunamies but are more frequent. As a result Tornados have caused higher number of total fatalities.
+
+```{r}
+par(mfcol=c(1,2))
+
+barplot(mf[1:5,"mean_fatalities"], names.arg = mf[1:5,"EVTYPE"],col="Red",
+        main="Top five events by highest average number of Fatalities",
+        ylab="Average # of Fatalities", cex.names = 0.4, cex.main=0.6)
+
+barplot(tf[1:5,"total_fatalities"], names.arg = tf[1:5,"EVTYPE"],col="Red",
+        main="Top five events by highest total number of Fatalities",
+        ylab="Total # of Fatalities", cex.names = 0.4, cex.main=0.6)
+
+```
+
+Impact on public health in terms of injuries. Here we have Hurricanes and Tornados. Again Tornados have a lower number of injuries compared to Hurricanes. But due to their frequency they inflict higher number of total injuries.
+
+```{r}
+par(mfcol=c(1,2))
+barplot(mi[1:5,"mean_injuries"], names.arg = mi[1:5,"EVTYPE"],col="Red",
+        main="Top five events by highest average number of Injuries",
+        ylab="Average # of Injuries", cex.names = 0.4, cex.main=0.6)
+
+barplot(ti[1:5,"total_injuries"], names.arg = ti[1:5,"EVTYPE"],col="Red",
+        main="Top five events by highest total number of Injuries",
+        ylab="Total # of Injuries", cex.names = 0.4, cex.main=0.6)
+```
+
+##Economical impact
+The economical impact of severe weather events was estimated using the property damage in millions of dollars (M$). On average, Wild Fires inflict more economical damage. However Tornados have done the most damage in the recorded period.
+
+
+```{r}
+par(mfcol=c(1,2))
+barplot(md[1:5,"mean_dmg"], names.arg = md[1:5,"EVTYPE"],col="Red",
+        main="Top five events by highest average damage",
+        ylab="Average damage in $ (M)", cex.names = 0.4, cex.main=0.6)
+
+barplot(td[1:5,"total_dmg"], names.arg = td[1:5,"EVTYPE"],col="Red",
+        main="Top five events by highest total damage",
+        ylab="Total damage in $ (M)", cex.names = 0.4, cex.main=0.6)
+```
+
+#Summary
+
+The most severe weather events that are most harmful to public health in terms of average number of fatalities and injuries are: Tsunamies and Hurricanes. However due to their higher frequency, Tornados have caused most total damage in terms if fatalities and injuries.
+
+Similarly, the most severe weather events that have highest impact on economy  in terms average damage done are: Wild fires. Here again, Tornados have than most total damage over whole period.
+
